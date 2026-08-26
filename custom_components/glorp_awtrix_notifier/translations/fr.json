@@ -1,0 +1,188 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Glorp's Awtrix Notifier",
+        "description": "Publie sur vos afficheurs Awtrix via MQTT. Les cibles et règles se configurent ensuite depuis le menu \"...\" de l'intégration."
+      }
+    },
+    "abort": {
+      "mqtt_not_configured": "L'intégration MQTT doit d'abord être configurée (Paramètres -> Appareils et services -> Ajouter une intégration -> MQTT)."
+    }
+  },
+  "config_subentries": {
+    "target": {
+      "initiate_flow": {
+        "user": "Ajouter une cible",
+        "reconfigure": "Modifier la cible"
+      },
+      "entry_type": "Cible",
+      "step": {
+        "user": {
+          "title": "Ajouter une cible Awtrix",
+          "description": "Une cible correspond à un afficheur Awtrix physique.",
+          "data": {
+            "name": "Nom convivial",
+            "mqtt_prefix": "Préfixe MQTT (ex. awtrix_salon)"
+          }
+        },
+        "reconfigure": {
+          "title": "Modifier la cible",
+          "description": "Une cible correspond à un afficheur Awtrix physique.",
+          "data": {
+            "name": "Nom convivial",
+            "mqtt_prefix": "Préfixe MQTT (ex. awtrix_salon)"
+          }
+        }
+      },
+      "error": {
+        "name_required": "Le nom est requis.",
+        "mqtt_prefix_required": "Le préfixe MQTT est requis.",
+        "mqtt_prefix_already_used": "Une autre cible utilise déjà ce préfixe MQTT."
+      }
+    },
+    "rule": {
+      "initiate_flow": {
+        "user": "Ajouter une règle",
+        "reconfigure": "Modifier la règle"
+      },
+      "entry_type": "Règle",
+      "step": {
+        "basics": {
+          "title": "Règle : nom et cible(s)",
+          "data": {
+            "name": "Nom de la règle",
+            "target_names": "Cible(s)"
+          }
+        },
+        "show_trigger": {
+          "title": "Déclencheur d'affichage",
+          "description": "Quand cette règle doit-elle s'afficher sur sa/ses cible(s) ? Choisissez un type de déclencheur et remplissez uniquement le champ correspondant.",
+          "data": {
+            "kind": "Type de déclencheur",
+            "interval_minutes": "Toutes les N minutes (pour \"Intervalle\")",
+            "at": "À l'heure (pour \"Heure fixe\")",
+            "weekdays": "Ces jours de la semaine (pour \"Heure fixe\" ; vide = tous les jours)",
+            "entity_id": "Entité (pour \"Changement d'entité\")"
+          }
+        },
+        "show_trigger_more": {
+          "title": "Un autre déclencheur d'affichage ?",
+          "data": {
+            "add_another": "Ajouter un autre déclencheur d'affichage"
+          }
+        },
+        "show_condition": {
+          "title": "Condition d'affichage (optionnelle)",
+          "description": "N'afficher que si l'état de cette entité respecte une condition. Laissez l'entité vide pour toujours afficher quand un déclencheur se déclenche.",
+          "data": {
+            "entity_id": "Entité",
+            "op": "Comparaison",
+            "value": "Valeur"
+          }
+        },
+        "content": {
+          "title": "Contenu",
+          "data": {
+            "text_template": "Texte (texte simple ou template Jinja)",
+            "icon_template": "Icône (id/nom fixe ou template Jinja)",
+            "color": "Couleur (hex, ex. FFFFFF)",
+            "effect": "Effet",
+            "hold": "Hold",
+            "repeat": "Repeat"
+          }
+        },
+        "clear_intro": {
+          "title": "Effacement",
+          "description": "Cette règle doit-elle aussi effacer l'app qu'elle affiche, sur son ou ses propres déclencheurs ?",
+          "data": {
+            "configure_clear": "Configurer un effacement"
+          }
+        },
+        "clear_trigger": {
+          "title": "Déclencheur d'effacement",
+          "description": "Quand cette règle doit-elle s'effacer sur sa/ses cible(s) ? Choisissez un type de déclencheur et remplissez uniquement le champ correspondant.",
+          "data": {
+            "kind": "Type de déclencheur",
+            "interval_minutes": "Toutes les N minutes (pour \"Intervalle\")",
+            "at": "À l'heure (pour \"Heure fixe\")",
+            "weekdays": "Ces jours de la semaine (pour \"Heure fixe\" ; vide = tous les jours)",
+            "entity_id": "Entité (pour \"Changement d'entité\")"
+          }
+        },
+        "clear_trigger_more": {
+          "title": "Un autre déclencheur d'effacement ?",
+          "data": {
+            "add_another": "Ajouter un autre déclencheur d'effacement"
+          }
+        },
+        "clear_condition": {
+          "title": "Condition d'effacement (optionnelle)",
+          "description": "N'effacer que si l'état de cette entité respecte une condition. Laissez l'entité vide pour toujours effacer quand un déclencheur se déclenche.",
+          "data": {
+            "entity_id": "Entité",
+            "op": "Comparaison",
+            "value": "Valeur"
+          }
+        }
+      },
+      "abort": {
+        "no_targets": "Ajoutez au moins une cible avant d'ajouter une règle."
+      },
+      "error": {
+        "name_required": "Le nom est requis.",
+        "at_least_one_target_required": "Sélectionnez au moins une cible.",
+        "interval_minutes_required": "Indiquez un intervalle en minutes.",
+        "at_required": "Indiquez une heure.",
+        "entity_id_required": "Sélectionnez une entité.",
+        "op_required": "Sélectionnez une comparaison.",
+        "value_required": "Indiquez une valeur de comparaison."
+      }
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "interval": "Intervalle",
+        "time_of_day": "Heure fixe",
+        "entity_change": "Changement d'entité"
+      }
+    },
+    "op": {
+      "options": {
+        "above": "Au-dessus",
+        "below": "En dessous",
+        "equals": "Égal à"
+      }
+    },
+    "weekdays": {
+      "options": {
+        "mon": "Lundi",
+        "tue": "Mardi",
+        "wed": "Mercredi",
+        "thu": "Jeudi",
+        "fri": "Vendredi",
+        "sat": "Samedi",
+        "sun": "Dimanche"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "derniere_action": {
+        "name": "Dernière action",
+        "state": {
+          "show": "Affichage",
+          "clear": "Effacement",
+          "none": "Aucune"
+        }
+      },
+      "raison": {
+        "name": "Raison"
+      },
+      "dernier_envoi": {
+        "name": "Dernier envoi"
+      }
+    }
+  }
+}

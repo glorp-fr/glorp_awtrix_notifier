@@ -1,0 +1,188 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Glorp's Awtrix Notifier",
+        "description": "Publishes to your Awtrix display(s) over MQTT. Targets and rules are configured afterwards from the integration's \"...\" menu."
+      }
+    },
+    "abort": {
+      "mqtt_not_configured": "The MQTT integration must be set up first (Settings -> Devices & services -> Add integration -> MQTT)."
+    }
+  },
+  "config_subentries": {
+    "target": {
+      "initiate_flow": {
+        "user": "Add target",
+        "reconfigure": "Edit target"
+      },
+      "entry_type": "Target",
+      "step": {
+        "user": {
+          "title": "Add an Awtrix target",
+          "description": "A target is one physical Awtrix display.",
+          "data": {
+            "name": "Friendly name",
+            "mqtt_prefix": "MQTT prefix (e.g. awtrix_salon)"
+          }
+        },
+        "reconfigure": {
+          "title": "Edit target",
+          "description": "A target is one physical Awtrix display.",
+          "data": {
+            "name": "Friendly name",
+            "mqtt_prefix": "MQTT prefix (e.g. awtrix_salon)"
+          }
+        }
+      },
+      "error": {
+        "name_required": "Name is required.",
+        "mqtt_prefix_required": "MQTT prefix is required.",
+        "mqtt_prefix_already_used": "Another target already uses this MQTT prefix."
+      }
+    },
+    "rule": {
+      "initiate_flow": {
+        "user": "Add rule",
+        "reconfigure": "Edit rule"
+      },
+      "entry_type": "Rule",
+      "step": {
+        "basics": {
+          "title": "Rule: name and target(s)",
+          "data": {
+            "name": "Rule name",
+            "target_names": "Target(s)"
+          }
+        },
+        "show_trigger": {
+          "title": "Show trigger",
+          "description": "When should this rule show on its target(s)? Pick one trigger kind and fill in only the matching field.",
+          "data": {
+            "kind": "Trigger kind",
+            "interval_minutes": "Every N minutes (for \"Interval\")",
+            "at": "At time (for \"Time of day\")",
+            "weekdays": "On these weekdays (for \"Time of day\"; leave empty for every day)",
+            "entity_id": "Entity (for \"Entity change\")"
+          }
+        },
+        "show_trigger_more": {
+          "title": "Another show trigger?",
+          "data": {
+            "add_another": "Add another show trigger"
+          }
+        },
+        "show_condition": {
+          "title": "Show condition (optional)",
+          "description": "Only show when this entity's state meets a condition. Leave the entity empty to always show when a trigger fires.",
+          "data": {
+            "entity_id": "Entity",
+            "op": "Comparison",
+            "value": "Value"
+          }
+        },
+        "content": {
+          "title": "Content",
+          "data": {
+            "text_template": "Text (plain text or Jinja template)",
+            "icon_template": "Icon (plain icon id/name or Jinja template)",
+            "color": "Color (hex, e.g. FFFFFF)",
+            "effect": "Effect",
+            "hold": "Hold",
+            "repeat": "Repeat"
+          }
+        },
+        "clear_intro": {
+          "title": "Clear rule",
+          "description": "Should this rule also clear the app it shows, on its own trigger(s)?",
+          "data": {
+            "configure_clear": "Configure a clear rule"
+          }
+        },
+        "clear_trigger": {
+          "title": "Clear trigger",
+          "description": "When should this rule clear on its target(s)? Pick one trigger kind and fill in only the matching field.",
+          "data": {
+            "kind": "Trigger kind",
+            "interval_minutes": "Every N minutes (for \"Interval\")",
+            "at": "At time (for \"Time of day\")",
+            "weekdays": "On these weekdays (for \"Time of day\"; leave empty for every day)",
+            "entity_id": "Entity (for \"Entity change\")"
+          }
+        },
+        "clear_trigger_more": {
+          "title": "Another clear trigger?",
+          "data": {
+            "add_another": "Add another clear trigger"
+          }
+        },
+        "clear_condition": {
+          "title": "Clear condition (optional)",
+          "description": "Only clear when this entity's state meets a condition. Leave the entity empty to always clear when a trigger fires.",
+          "data": {
+            "entity_id": "Entity",
+            "op": "Comparison",
+            "value": "Value"
+          }
+        }
+      },
+      "abort": {
+        "no_targets": "Add at least one target before adding a rule."
+      },
+      "error": {
+        "name_required": "Name is required.",
+        "at_least_one_target_required": "Select at least one target.",
+        "interval_minutes_required": "Enter an interval in minutes.",
+        "at_required": "Enter a time.",
+        "entity_id_required": "Select an entity.",
+        "op_required": "Select a comparison.",
+        "value_required": "Enter a value to compare against."
+      }
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "interval": "Interval",
+        "time_of_day": "Time of day",
+        "entity_change": "Entity change"
+      }
+    },
+    "op": {
+      "options": {
+        "above": "Above",
+        "below": "Below",
+        "equals": "Equals"
+      }
+    },
+    "weekdays": {
+      "options": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "derniere_action": {
+        "name": "Last action",
+        "state": {
+          "show": "Show",
+          "clear": "Clear",
+          "none": "None"
+        }
+      },
+      "raison": {
+        "name": "Reason"
+      },
+      "dernier_envoi": {
+        "name": "Last sent"
+      }
+    }
+  }
+}
