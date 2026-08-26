@@ -65,6 +65,19 @@ _TRIGGER_KIND_OPTIONS = ["interval", "time_of_day", "entity_change"]
 _CONDITION_OP_OPTIONS = ["above", "below", "equals"]
 
 
+def _optional_marker(key: str, existing_value: Any) -> vol.Optional:
+    """vol.Optional for a selector field with no meaningful empty value.
+
+    Selectors like EntitySelector/SelectSelector reject `None` outright, so a
+    bare `vol.Optional(key, default=None)` would make the *whole schema*
+    reject an empty submission instead of letting the field be skipped.
+    Only pass a default when there is a real value to pre-fill.
+    """
+    if existing_value:
+        return vol.Optional(key, default=existing_value)
+    return vol.Optional(key)
+
+
 def _target_schema(*, name_default: str = "", prefix_default: str = "") -> vol.Schema:
     return vol.Schema(
         {
@@ -399,17 +412,15 @@ class RuleSubentryFlow(ConfigSubentryFlow):
         existing = self._data.get(condition_key) or {}
         schema = vol.Schema(
             {
-                vol.Optional(CONF_ENTITY_ID, default=existing.get(CONF_ENTITY_ID)): selector.EntitySelector(),
-                vol.Optional(CONF_CONDITION_OP, default=existing.get(CONF_CONDITION_OP)): selector.SelectSelector(
+                _optional_marker(CONF_ENTITY_ID, existing.get(CONF_ENTITY_ID)): selector.EntitySelector(),
+                _optional_marker(CONF_CONDITION_OP, existing.get(CONF_CONDITION_OP)): selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=_CONDITION_OP_OPTIONS,
                         mode=selector.SelectSelectorMode.LIST,
                         translation_key=CONF_CONDITION_OP,
                     )
                 ),
-                vol.Optional(
-                    CONF_CONDITION_VALUE, default=existing.get(CONF_CONDITION_VALUE)
-                ): selector.TextSelector(),
+                _optional_marker(CONF_CONDITION_VALUE, existing.get(CONF_CONDITION_VALUE)): selector.TextSelector(),
             }
         )
         return self.async_show_form(step_id=step_id, data_schema=schema, errors=errors)
