@@ -63,6 +63,89 @@ MAX_TRIGGERS = 3
 
 _TRIGGER_KIND_OPTIONS = ["interval", "time_of_day", "entity_change"]
 _CONDITION_OP_OPTIONS = ["above", "below", "equals"]
+_TRIGGER_REVIEW_ACTION_OPTIONS = ["keep", "edit", "remove"]
+
+TARGET_TITLE_PREFIX = "📺 Cible — "
+RULE_TITLE_PREFIX = "🔔 Règle — "
+
+_WEEKDAY_LABELS_FR = {
+    "mon": "lun",
+    "tue": "mar",
+    "wed": "mer",
+    "thu": "jeu",
+    "fri": "ven",
+    "sat": "sam",
+    "sun": "dim",
+}
+
+
+def _describe_trigger(trigger: dict[str, Any]) -> str:
+    """Human-readable (French) summary of a trigger dict, for the review step."""
+    kind = trigger.get(CONF_TRIGGER_KIND)
+    if kind == "interval":
+        return f"Toutes les {trigger.get(CONF_INTERVAL_MINUTES)} minutes"
+    if kind == "time_of_day":
+        at = trigger.get(CONF_AT) or "?"
+        weekdays = trigger.get(CONF_WEEKDAYS) or []
+        if weekdays:
+            names = ", ".join(_WEEKDAY_LABELS_FR.get(w, w) for w in weekdays)
+            return f"{names} à {at}"
+        return f"Tous les jours à {at}"
+    if kind == "entity_change":
+        return f"Quand {trigger.get(CONF_ENTITY_ID)} change"
+    return "Déclencheur inconnu"
+
+
+def _trigger_schema(defaults: dict[str, Any]) -> vol.Schema:
+    """Schema for one show/clear trigger, optionally pre-filled from `defaults` (edit mode)."""
+    kind_default = defaults.get(CONF_TRIGGER_KIND)
+    kind_field = (
+        vol.Required(CONF_TRIGGER_KIND, default=kind_default) if kind_default else vol.Required(CONF_TRIGGER_KIND)
+    )
+    return vol.Schema(
+        {
+            kind_field: selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=_TRIGGER_KIND_OPTIONS,
+                    mode=selector.SelectSelectorMode.LIST,
+                    translation_key=CONF_TRIGGER_KIND,
+                )
+            ),
+            _optional_marker(CONF_INTERVAL_MINUTES, defaults.get(CONF_INTERVAL_MINUTES)): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=1, max=1440, step=1, unit_of_measurement="min")
+            ),
+            _optional_marker(CONF_AT, defaults.get(CONF_AT)): selector.TimeSelector(),
+            _optional_marker(CONF_WEEKDAYS, defaults.get(CONF_WEEKDAYS)): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=WEEKDAYS,
+                    multiple=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key=CONF_WEEKDAYS,
+                )
+            ),
+            _optional_marker(CONF_ENTITY_ID, defaults.get(CONF_ENTITY_ID)): selector.EntitySelector(),
+        }
+    )
+
+
+def _validate_trigger_input(user_input: dict[str, Any]) -> tuple[dict[str, Any], dict[str, str]]:
+    """Build a trigger dict from submitted form input, and any validation errors."""
+    kind = user_input[CONF_TRIGGER_KIND]
+    trigger = {
+        CONF_TRIGGER_KIND: kind,
+        CONF_INTERVAL_MINUTES: user_input.get(CONF_INTERVAL_MINUTES),
+        CONF_AT: user_input.get(CONF_AT),
+        CONF_WEEKDAYS: user_input.get(CONF_WEEKDAYS, []),
+        CONF_ENTITY_ID: user_input.get(CONF_ENTITY_ID),
+    }
+    errors: dict[str, str] = {}
+    if kind == "interval" and not trigger[CONF_INTERVAL_MINUTES]:
+        errors[CONF_INTERVAL_MINUTES] = "interval_minutes_required"
+    elif kind == "time_of_day" and not trigger[CONF_AT]:
+        errors[CONF_AT] = "at_required"
+    elif kind == "entity_change" and not trigger[CONF_ENTITY_ID]:
+        errors[CONF_ENTITY_ID] = "entity_id_required"
+    return trigger, errors
 
 
 def _optional_marker(key: str, existing_value: Any) -> vol.Optional:
@@ -132,9 +215,10 @@ class TargetSubentryFlow(ConfigSubentryFlow):
                 errors[CONF_MQTT_PREFIX] = "mqtt_prefix_already_used"
             else:
                 data = {CONF_NAME: name, CONF_MQTT_PREFIX: prefix}
+                title = f"{TARGET_TITLE_PREFIX}{name}"
                 if is_reconfigure:
-                    return self.async_update_and_abort(self._get_entry(), current_subentry, title=name, data=data)
-                return self.async_create_entry(title=name, data=data)
+                    return self.async_update_and_abort(self._get_entry(), current_subentry, title=title, data=data)
+                return self.async_create_entry(title=title, data=data)
 
         defaults = current_subentry.data if current_subentry else {}
         schema = _target_schema(
@@ -175,6 +259,10 @@ class RuleSubentryFlow(ConfigSubentryFlow):
             CONF_CLEAR_CONDITION: None,
         }
         self._configure_clear = False
+        # Reconfigure only: triggers still waiting to be reviewed (kept/edited/removed) —
+        # see _async_step_trigger_review. Populated once in async_step_reconfigure.
+        self._trigger_review_queue: dict[str, list[dict[str, Any]]] = {}
+        self._editing_trigger: dict[str, Any] = {}
 
     # -- entry points -----------------------------------------------------
 
@@ -186,6 +274,8 @@ class RuleSubentryFlow(ConfigSubentryFlow):
             subentry = self._get_reconfigure_subentry()
             self._data = dict(subentry.data)
             self._configure_clear = bool(self._data[CONF_CLEAR_TRIGGERS] or self._data[CONF_CLEAR_CONDITION])
+            self._trigger_review_queue[CONF_SHOW_TRIGGERS] = list(self._data[CONF_SHOW_TRIGGERS])
+            self._trigger_review_queue[CONF_CLEAR_TRIGGERS] = list(self._data.get(CONF_CLEAR_TRIGGERS, []))
         return await self.async_step_basics(user_input)
 
     # -- step 1: name + targets --------------------------------------------
@@ -207,6 +297,8 @@ class RuleSubentryFlow(ConfigSubentryFlow):
                 self._data[CONF_NAME] = name
                 self._data[CONF_TARGET_NAMES] = targets
                 self._data[CONF_SHOW_TRIGGERS] = []
+                if self.source == SOURCE_RECONFIGURE:
+                    return await self.async_step_show_trigger_review()
                 return await self.async_step_show_trigger()
 
         schema = vol.Schema(
@@ -282,6 +374,8 @@ class RuleSubentryFlow(ConfigSubentryFlow):
                 self._data[CONF_CLEAR_CONDITION] = None
                 return await self.async_step_finish()
             self._data[CONF_CLEAR_TRIGGERS] = []
+            if self.source == SOURCE_RECONFIGURE:
+                return await self.async_step_clear_trigger_review()
             return await self.async_step_clear_trigger()
 
         schema = vol.Schema({vol.Required("configure_clear", default=self._configure_clear): selector.BooleanSelector()})
@@ -314,9 +408,12 @@ class RuleSubentryFlow(ConfigSubentryFlow):
 
     async def async_step_finish(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         name = self._data[CONF_NAME]
+        title = f"{RULE_TITLE_PREFIX}{name}"
         if self.source == SOURCE_RECONFIGURE:
-            return self.async_update_and_abort(self._get_entry(), self._get_reconfigure_subentry(), title=name, data=self._data)
-        return self.async_create_entry(title=name, data=self._data, unique_id=slugify(name))
+            return self.async_update_and_abort(
+                self._get_entry(), self._get_reconfigure_subentry(), title=title, data=self._data
+            )
+        return self.async_create_entry(title=title, data=self._data, unique_id=slugify(name))
 
     # -- shared trigger loop implementation -----------------------------------
 
@@ -325,49 +422,106 @@ class RuleSubentryFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            kind = user_input[CONF_TRIGGER_KIND]
-            trigger = {
-                CONF_TRIGGER_KIND: kind,
-                CONF_INTERVAL_MINUTES: user_input.get(CONF_INTERVAL_MINUTES),
-                CONF_AT: user_input.get(CONF_AT),
-                CONF_WEEKDAYS: user_input.get(CONF_WEEKDAYS, []),
-                CONF_ENTITY_ID: user_input.get(CONF_ENTITY_ID),
-            }
-            if kind == "interval" and not trigger[CONF_INTERVAL_MINUTES]:
-                errors[CONF_INTERVAL_MINUTES] = "interval_minutes_required"
-            elif kind == "time_of_day" and not trigger[CONF_AT]:
-                errors[CONF_AT] = "at_required"
-            elif kind == "entity_change" and not trigger[CONF_ENTITY_ID]:
-                errors[CONF_ENTITY_ID] = "entity_id_required"
-            else:
+            trigger, errors = _validate_trigger_input(user_input)
+            if not errors:
                 self._data[triggers_key] = [*self._data[triggers_key], trigger]
                 return await getattr(self, f"async_step_{more_step}")()
 
+        return self.async_show_form(step_id=step_id, data_schema=_trigger_schema({}), errors=errors)
+
+    # -- reconfigure only: review existing triggers before the add loop -------
+
+    async def _async_step_trigger_review(
+        self,
+        user_input: dict[str, Any] | None,
+        *,
+        step_id: str,
+        triggers_key: str,
+        edit_step: str,
+        more_step: str,
+    ) -> SubentryFlowResult:
+        """Walk the existing triggers one at a time: keep, edit, or remove each."""
+        queue = self._trigger_review_queue.get(triggers_key, [])
+        if not queue:
+            return await getattr(self, f"async_step_{more_step}")()
+
+        current = queue[0]
+        if user_input is not None:
+            queue.pop(0)
+            action = user_input["action"]
+            if action == "keep":
+                self._data[triggers_key] = [*self._data[triggers_key], current]
+            elif action == "edit":
+                self._editing_trigger = current
+                return await getattr(self, f"async_step_{edit_step}")()
+            # "remove": just drop it, nothing to append
+            return await self._async_step_trigger_review(
+                None, step_id=step_id, triggers_key=triggers_key, edit_step=edit_step, more_step=more_step
+            )
+
         schema = vol.Schema(
             {
-                vol.Required(CONF_TRIGGER_KIND): selector.SelectSelector(
+                vol.Required("action", default="keep"): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=_TRIGGER_KIND_OPTIONS,
+                        options=_TRIGGER_REVIEW_ACTION_OPTIONS,
                         mode=selector.SelectSelectorMode.LIST,
-                        translation_key=CONF_TRIGGER_KIND,
+                        translation_key="trigger_review_action",
                     )
                 ),
-                vol.Optional(CONF_INTERVAL_MINUTES): selector.NumberSelector(
-                    selector.NumberSelectorConfig(min=1, max=1440, step=1, unit_of_measurement="min")
-                ),
-                vol.Optional(CONF_AT): selector.TimeSelector(),
-                vol.Optional(CONF_WEEKDAYS): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=WEEKDAYS,
-                        multiple=True,
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key=CONF_WEEKDAYS,
-                    )
-                ),
-                vol.Optional(CONF_ENTITY_ID): selector.EntitySelector(),
             }
         )
-        return self.async_show_form(step_id=step_id, data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id=step_id, data_schema=schema, description_placeholders={"trigger": _describe_trigger(current)}
+        )
+
+    async def _async_step_trigger_review_edit(
+        self, user_input: dict[str, Any] | None, *, step_id: str, triggers_key: str, review_step: str
+    ) -> SubentryFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            trigger, errors = _validate_trigger_input(user_input)
+            if not errors:
+                self._data[triggers_key] = [*self._data[triggers_key], trigger]
+                return await getattr(self, f"async_step_{review_step}")()
+
+        return self.async_show_form(
+            step_id=step_id, data_schema=_trigger_schema(self._editing_trigger), errors=errors
+        )
+
+    async def async_step_show_trigger_review(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
+        return await self._async_step_trigger_review(
+            user_input,
+            step_id="show_trigger_review",
+            triggers_key=CONF_SHOW_TRIGGERS,
+            edit_step="show_trigger_review_edit",
+            more_step="show_trigger_more",
+        )
+
+    async def async_step_show_trigger_review_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        return await self._async_step_trigger_review_edit(
+            user_input, step_id="show_trigger_review_edit", triggers_key=CONF_SHOW_TRIGGERS, review_step="show_trigger_review"
+        )
+
+    async def async_step_clear_trigger_review(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
+        return await self._async_step_trigger_review(
+            user_input,
+            step_id="clear_trigger_review",
+            triggers_key=CONF_CLEAR_TRIGGERS,
+            edit_step="clear_trigger_review_edit",
+            more_step="clear_trigger_more",
+        )
+
+    async def async_step_clear_trigger_review_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        return await self._async_step_trigger_review_edit(
+            user_input,
+            step_id="clear_trigger_review_edit",
+            triggers_key=CONF_CLEAR_TRIGGERS,
+            review_step="clear_trigger_review",
+        )
 
     async def _async_step_trigger_more(
         self, user_input: dict[str, Any] | None, *, step_id: str, triggers_key: str, add_another_step: str, done_step: str

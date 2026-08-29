@@ -72,6 +72,24 @@
             "add_another": "Ajouter un autre déclencheur d'affichage"
           }
         },
+        "show_trigger_review": {
+          "title": "Déclencheur d'affichage existant",
+          "description": "Déclencheur actuel : {trigger}",
+          "data": {
+            "action": "Que faire de ce déclencheur ?"
+          }
+        },
+        "show_trigger_review_edit": {
+          "title": "Modifier le déclencheur d'affichage",
+          "description": "Quand cette règle doit-elle s'afficher sur sa/ses cible(s) ? Choisissez un type de déclencheur et remplissez uniquement le champ correspondant.",
+          "data": {
+            "kind": "Type de déclencheur",
+            "interval_minutes": "Toutes les N minutes (pour \"Intervalle\")",
+            "at": "À l'heure (pour \"Heure fixe\")",
+            "weekdays": "Ces jours de la semaine (pour \"Heure fixe\" ; vide = tous les jours)",
+            "entity_id": "Entité (pour \"Changement d'entité\")"
+          }
+        },
         "show_condition": {
           "title": "Condition d'affichage (optionnelle)",
           "description": "N'afficher que si l'état de cette entité respecte une condition. Laissez l'entité vide pour toujours afficher quand un déclencheur se déclenche.",
@@ -116,6 +134,24 @@
             "add_another": "Ajouter un autre déclencheur d'effacement"
           }
         },
+        "clear_trigger_review": {
+          "title": "Déclencheur d'effacement existant",
+          "description": "Déclencheur actuel : {trigger}",
+          "data": {
+            "action": "Que faire de ce déclencheur ?"
+          }
+        },
+        "clear_trigger_review_edit": {
+          "title": "Modifier le déclencheur d'effacement",
+          "description": "Quand cette règle doit-elle s'effacer sur sa/ses cible(s) ? Choisissez un type de déclencheur et remplissez uniquement le champ correspondant.",
+          "data": {
+            "kind": "Type de déclencheur",
+            "interval_minutes": "Toutes les N minutes (pour \"Intervalle\")",
+            "at": "À l'heure (pour \"Heure fixe\")",
+            "weekdays": "Ces jours de la semaine (pour \"Heure fixe\" ; vide = tous les jours)",
+            "entity_id": "Entité (pour \"Changement d'entité\")"
+          }
+        },
         "clear_condition": {
           "title": "Condition d'effacement (optionnelle)",
           "description": "N'effacer que si l'état de cette entité respecte une condition. Laissez l'entité vide pour toujours effacer quand un déclencheur se déclenche.",
@@ -146,6 +182,13 @@
         "interval": "Intervalle",
         "time_of_day": "Heure fixe",
         "entity_change": "Changement d'entité"
+      }
+    },
+    "trigger_review_action": {
+      "options": {
+        "keep": "Garder tel quel",
+        "edit": "Modifier",
+        "remove": "Supprimer"
       }
     },
     "op": {

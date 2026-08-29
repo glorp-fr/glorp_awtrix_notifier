@@ -72,6 +72,24 @@
             "add_another": "Add another show trigger"
           }
         },
+        "show_trigger_review": {
+          "title": "Existing show trigger",
+          "description": "Current trigger: {trigger}",
+          "data": {
+            "action": "What do you want to do with it?"
+          }
+        },
+        "show_trigger_review_edit": {
+          "title": "Edit show trigger",
+          "description": "When should this rule show on its target(s)? Pick one trigger kind and fill in only the matching field.",
+          "data": {
+            "kind": "Trigger kind",
+            "interval_minutes": "Every N minutes (for \"Interval\")",
+            "at": "At time (for \"Time of day\")",
+            "weekdays": "On these weekdays (for \"Time of day\"; leave empty for every day)",
+            "entity_id": "Entity (for \"Entity change\")"
+          }
+        },
         "show_condition": {
           "title": "Show condition (optional)",
           "description": "Only show when this entity's state meets a condition. Leave the entity empty to always show when a trigger fires.",
@@ -116,6 +134,24 @@
             "add_another": "Add another clear trigger"
           }
         },
+        "clear_trigger_review": {
+          "title": "Existing clear trigger",
+          "description": "Current trigger: {trigger}",
+          "data": {
+            "action": "What do you want to do with it?"
+          }
+        },
+        "clear_trigger_review_edit": {
+          "title": "Edit clear trigger",
+          "description": "When should this rule clear on its target(s)? Pick one trigger kind and fill in only the matching field.",
+          "data": {
+            "kind": "Trigger kind",
+            "interval_minutes": "Every N minutes (for \"Interval\")",
+            "at": "At time (for \"Time of day\")",
+            "weekdays": "On these weekdays (for \"Time of day\"; leave empty for every day)",
+            "entity_id": "Entity (for \"Entity change\")"
+          }
+        },
         "clear_condition": {
           "title": "Clear condition (optional)",
           "description": "Only clear when this entity's state meets a condition. Leave the entity empty to always clear when a trigger fires.",
@@ -146,6 +182,13 @@
         "interval": "Interval",
         "time_of_day": "Time of day",
         "entity_change": "Entity change"
+      }
+    },
+    "trigger_review_action": {
+      "options": {
+        "keep": "Keep as is",
+        "edit": "Edit",
+        "remove": "Remove"
       }
     },
     "op": {
