@@ -263,6 +263,9 @@ class RuleSubentryFlow(ConfigSubentryFlow):
         # see _async_step_trigger_review. Populated once in async_step_reconfigure.
         self._trigger_review_queue: dict[str, list[dict[str, Any]]] = {}
         self._editing_trigger: dict[str, Any] = {}
+        # Reconfigure only: True skips straight to content and saves, leaving
+        # triggers/conditions untouched — see async_step_reconfigure.
+        self._quick_edit = False
 
     # -- entry points -----------------------------------------------------
 
@@ -270,13 +273,19 @@ class RuleSubentryFlow(ConfigSubentryFlow):
         return await self.async_step_basics(user_input)
 
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
-        if not user_input:
+        if user_input is None:
             subentry = self._get_reconfigure_subentry()
             self._data = dict(subentry.data)
             self._configure_clear = bool(self._data[CONF_CLEAR_TRIGGERS] or self._data[CONF_CLEAR_CONDITION])
             self._trigger_review_queue[CONF_SHOW_TRIGGERS] = list(self._data[CONF_SHOW_TRIGGERS])
             self._trigger_review_queue[CONF_CLEAR_TRIGGERS] = list(self._data.get(CONF_CLEAR_TRIGGERS, []))
-        return await self.async_step_basics(user_input)
+            schema = vol.Schema({vol.Required("quick_edit", default=False): selector.BooleanSelector()})
+            return self.async_show_form(step_id="reconfigure", data_schema=schema)
+
+        self._quick_edit = user_input["quick_edit"]
+        if self._quick_edit:
+            return await self.async_step_content()
+        return await self.async_step_basics()
 
     # -- step 1: name + targets --------------------------------------------
 
@@ -346,6 +355,8 @@ class RuleSubentryFlow(ConfigSubentryFlow):
             self._data[CONF_EFFECT] = user_input[CONF_EFFECT]
             self._data[CONF_HOLD] = user_input[CONF_HOLD]
             self._data[CONF_REPEAT] = int(user_input[CONF_REPEAT])
+            if self._quick_edit:
+                return await self.async_step_finish()
             return await self.async_step_clear_intro()
 
         schema = vol.Schema(

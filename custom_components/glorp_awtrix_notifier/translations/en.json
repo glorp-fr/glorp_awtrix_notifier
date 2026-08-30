@@ -48,6 +48,13 @@
       },
       "entry_type": "Rule",
       "step": {
+        "reconfigure": {
+          "title": "Edit rule",
+          "description": "Edit only the message, or review everything (triggers, conditions, content)?",
+          "data": {
+            "quick_edit": "Edit the message only"
+          }
+        },
         "basics": {
           "title": "Rule: name and target(s)",
           "data": {

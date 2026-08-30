@@ -48,6 +48,13 @@
       },
       "entry_type": "Règle",
       "step": {
+        "reconfigure": {
+          "title": "Modifier la règle",
+          "description": "Modifier uniquement le message, ou tout revoir (déclencheurs, conditions, contenu) ?",
+          "data": {
+            "quick_edit": "Modifier le message uniquement"
+          }
+        },
         "basics": {
           "title": "Règle : nom et cible(s)",
           "data": {
