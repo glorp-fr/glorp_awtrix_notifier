@@ -5,6 +5,7 @@ from custom_components.glorp_awtrix_notifier.publisher import build_clear_payloa
 
 _INTERVAL_TRIGGER = Trigger(kind=TriggerKind.INTERVAL, interval_minutes=5)
 _SALON = Target(name="Salon", mqtt_prefix="awtrix_salon")
+_SALON_NG = Target(name="Salon", mqtt_prefix="awtrix_salon", firmware_type="ng")
 
 
 def _rule(**overrides) -> Rule:
@@ -59,3 +60,60 @@ def test_slugify_strips_leading_and_trailing_separators():
 
 def test_slugify_never_returns_empty_string():
     assert slugify("---") == "_"
+
+
+def test_build_show_payload_topic_for_ng_target_uses_cmd_apps_pushed():
+    topic, _ = build_show_payload(_rule(), _SALON_NG, "Pluie", "1234")
+    assert topic == "awtrix_salon/cmd/apps/pushed/awtrix_pluie"
+
+
+def test_build_show_payload_body_for_ng_target_renames_color_to_text_color_with_hash():
+    rule = _rule(color="00FF00")
+    _, payload = build_show_payload(rule, _SALON_NG, "Pluie", "1234")
+    assert payload["textColor"] == "#00FF00"
+    assert "color" not in payload
+
+
+def test_build_show_payload_body_for_ng_target_does_not_double_prefix_hash_color():
+    rule = _rule(color="#00FF00")
+    _, payload = build_show_payload(rule, _SALON_NG, "Pluie", "1234")
+    assert payload["textColor"] == "#00FF00"
+
+
+def test_build_show_payload_body_for_ng_target_omits_hold():
+    rule = _rule(hold=True)
+    _, payload = build_show_payload(rule, _SALON_NG, "Pluie", "1234")
+    assert "hold" not in payload
+
+
+def test_build_show_payload_body_for_ng_target_maps_infinite_repeat_to_zero():
+    rule = _rule(repeat=-1)
+    _, payload = build_show_payload(rule, _SALON_NG, "Pluie", "1234")
+    assert payload["repeat"] == 0
+
+
+def test_build_show_payload_body_for_ng_target_passes_through_positive_repeat():
+    rule = _rule(repeat=3)
+    _, payload = build_show_payload(rule, _SALON_NG, "Pluie", "1234")
+    assert payload["repeat"] == 3
+
+
+def test_build_show_payload_body_for_ng_target_sets_fixed_icon_mode():
+    _, payload = build_show_payload(_rule(), _SALON_NG, "Pluie", "1234")
+    assert payload["iconMode"] == "fixed"
+    assert "pushIcon" not in payload
+
+
+def test_build_show_payload_body_for_ng_target_keeps_text_icon_effect():
+    rule = _rule(effect="Fade")
+    _, payload = build_show_payload(rule, _SALON_NG, "Pluie", "1234")
+    assert payload["text"] == "Pluie"
+    assert payload["icon"] == "1234"
+    assert payload["effect"] == "Fade"
+
+
+def test_build_clear_payload_for_ng_target_uses_ng_topic_with_empty_body():
+    show_topic, _ = build_show_payload(_rule(), _SALON_NG, "Pluie", "1234")
+    clear_topic, clear_payload = build_clear_payload(_rule(), _SALON_NG)
+    assert clear_topic == show_topic
+    assert clear_payload == {}

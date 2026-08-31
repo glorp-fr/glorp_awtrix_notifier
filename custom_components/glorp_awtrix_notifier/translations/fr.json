@@ -23,7 +23,8 @@
           "description": "Une cible correspond à un afficheur Awtrix physique.",
           "data": {
             "name": "Nom convivial",
-            "mqtt_prefix": "Préfixe MQTT (ex. awtrix_salon)"
+            "mqtt_prefix": "Préfixe MQTT (ex. awtrix_salon)",
+            "firmware_type": "Firmware"
           }
         },
         "reconfigure": {
@@ -31,7 +32,8 @@
           "description": "Une cible correspond à un afficheur Awtrix physique.",
           "data": {
             "name": "Nom convivial",
-            "mqtt_prefix": "Préfixe MQTT (ex. awtrix_salon)"
+            "mqtt_prefix": "Préfixe MQTT (ex. awtrix_salon)",
+            "firmware_type": "Firmware"
           }
         }
       },
@@ -196,6 +198,12 @@
         "keep": "Garder tel quel",
         "edit": "Modifier",
         "remove": "Supprimer"
+      }
+    },
+    "firmware_type": {
+      "options": {
+        "legacy": "Legacy (Awtrix Light / Awtrix 3)",
+        "ng": "Awtrix NG"
       }
     },
     "op": {

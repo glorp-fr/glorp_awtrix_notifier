@@ -21,6 +21,7 @@ from .const import (
     CONF_CONDITION_VALUE,
     CONF_EFFECT,
     CONF_ENTITY_ID,
+    CONF_FIRMWARE_TYPE,
     CONF_HOLD,
     CONF_ICON_TEMPLATE,
     CONF_INTERVAL_MINUTES,
@@ -33,6 +34,7 @@ from .const import (
     CONF_TEXT_TEMPLATE,
     CONF_TRIGGER_KIND,
     CONF_WEEKDAYS,
+    DEFAULT_FIRMWARE_TYPE,
     DOMAIN,
     PLATFORMS,
     SUBENTRY_TYPE_RULE,
@@ -48,7 +50,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _target_from_subentry(subentry: "ConfigSubentry") -> Target:
-    return Target(name=subentry.data[CONF_NAME], mqtt_prefix=subentry.data[CONF_MQTT_PREFIX])
+    return Target(
+        name=subentry.data[CONF_NAME],
+        mqtt_prefix=subentry.data[CONF_MQTT_PREFIX],
+        firmware_type=subentry.data.get(CONF_FIRMWARE_TYPE, DEFAULT_FIRMWARE_TYPE),
+    )
 
 
 def _trigger_from_dict(data: dict) -> Trigger:

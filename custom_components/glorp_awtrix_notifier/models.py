@@ -13,6 +13,7 @@ class Target:
 
     name: str
     mqtt_prefix: str
+    firmware_type: str = "legacy"
 
 
 class TriggerKind(Enum):

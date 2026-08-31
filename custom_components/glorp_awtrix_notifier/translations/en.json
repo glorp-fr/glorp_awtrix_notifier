@@ -23,7 +23,8 @@
           "description": "A target is one physical Awtrix display.",
           "data": {
             "name": "Friendly name",
-            "mqtt_prefix": "MQTT prefix (e.g. awtrix_salon)"
+            "mqtt_prefix": "MQTT prefix (e.g. awtrix_salon)",
+            "firmware_type": "Firmware"
           }
         },
         "reconfigure": {
@@ -31,7 +32,8 @@
           "description": "A target is one physical Awtrix display.",
           "data": {
             "name": "Friendly name",
-            "mqtt_prefix": "MQTT prefix (e.g. awtrix_salon)"
+            "mqtt_prefix": "MQTT prefix (e.g. awtrix_salon)",
+            "firmware_type": "Firmware"
           }
         }
       },
@@ -196,6 +198,12 @@
         "keep": "Keep as is",
         "edit": "Edit",
         "remove": "Remove"
+      }
+    },
+    "firmware_type": {
+      "options": {
+        "legacy": "Legacy (Awtrix Light / Awtrix 3)",
+        "ng": "Awtrix NG"
       }
     },
     "op": {

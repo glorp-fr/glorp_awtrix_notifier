@@ -8,6 +8,11 @@ SUBENTRY_TYPE_RULE = "rule"
 # --- Target subentry data ---
 CONF_NAME = "name"
 CONF_MQTT_PREFIX = "mqtt_prefix"
+CONF_FIRMWARE_TYPE = "firmware_type"
+
+FIRMWARE_LEGACY = "legacy"
+FIRMWARE_NG = "ng"
+DEFAULT_FIRMWARE_TYPE = FIRMWARE_LEGACY
 
 # --- Rule subentry data ---
 CONF_TARGET_NAMES = "target_names"

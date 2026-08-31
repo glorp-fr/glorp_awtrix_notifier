@@ -36,6 +36,7 @@ from .const import (
     CONF_CONDITION_VALUE,
     CONF_EFFECT,
     CONF_ENTITY_ID,
+    CONF_FIRMWARE_TYPE,
     CONF_HOLD,
     CONF_ICON_TEMPLATE,
     CONF_INTERVAL_MINUTES,
@@ -50,9 +51,12 @@ from .const import (
     CONF_WEEKDAYS,
     DEFAULT_COLOR,
     DEFAULT_EFFECT,
+    DEFAULT_FIRMWARE_TYPE,
     DEFAULT_HOLD,
     DEFAULT_REPEAT,
     DOMAIN,
+    FIRMWARE_LEGACY,
+    FIRMWARE_NG,
     SUBENTRY_TYPE_RULE,
     SUBENTRY_TYPE_TARGET,
     WEEKDAYS,
@@ -64,6 +68,7 @@ MAX_TRIGGERS = 3
 _TRIGGER_KIND_OPTIONS = ["interval", "time_of_day", "entity_change"]
 _CONDITION_OP_OPTIONS = ["above", "below", "equals"]
 _TRIGGER_REVIEW_ACTION_OPTIONS = ["keep", "edit", "remove"]
+_FIRMWARE_TYPE_OPTIONS = [FIRMWARE_LEGACY, FIRMWARE_NG]
 
 TARGET_TITLE_PREFIX = "📺 Cible — "
 RULE_TITLE_PREFIX = "🔔 Règle — "
@@ -161,11 +166,20 @@ def _optional_marker(key: str, existing_value: Any) -> vol.Optional:
     return vol.Optional(key)
 
 
-def _target_schema(*, name_default: str = "", prefix_default: str = "") -> vol.Schema:
+def _target_schema(
+    *, name_default: str = "", prefix_default: str = "", firmware_type_default: str = DEFAULT_FIRMWARE_TYPE
+) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(CONF_NAME, default=name_default): selector.TextSelector(),
             vol.Required(CONF_MQTT_PREFIX, default=prefix_default): selector.TextSelector(),
+            vol.Required(CONF_FIRMWARE_TYPE, default=firmware_type_default): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=_FIRMWARE_TYPE_OPTIONS,
+                    mode=selector.SelectSelectorMode.LIST,
+                    translation_key=CONF_FIRMWARE_TYPE,
+                )
+            ),
         }
     )
 
@@ -214,7 +228,11 @@ class TargetSubentryFlow(ConfigSubentryFlow):
             elif self._prefix_in_use(prefix, exclude_subentry_id=current_subentry_id):
                 errors[CONF_MQTT_PREFIX] = "mqtt_prefix_already_used"
             else:
-                data = {CONF_NAME: name, CONF_MQTT_PREFIX: prefix}
+                data = {
+                    CONF_NAME: name,
+                    CONF_MQTT_PREFIX: prefix,
+                    CONF_FIRMWARE_TYPE: user_input[CONF_FIRMWARE_TYPE],
+                }
                 title = f"{TARGET_TITLE_PREFIX}{name}"
                 if is_reconfigure:
                     return self.async_update_and_abort(self._get_entry(), current_subentry, title=title, data=data)
@@ -222,7 +240,9 @@ class TargetSubentryFlow(ConfigSubentryFlow):
 
         defaults = current_subentry.data if current_subentry else {}
         schema = _target_schema(
-            name_default=defaults.get(CONF_NAME, ""), prefix_default=defaults.get(CONF_MQTT_PREFIX, "")
+            name_default=defaults.get(CONF_NAME, ""),
+            prefix_default=defaults.get(CONF_MQTT_PREFIX, ""),
+            firmware_type_default=defaults.get(CONF_FIRMWARE_TYPE, DEFAULT_FIRMWARE_TYPE),
         )
         return self.async_show_form(
             step_id="reconfigure" if is_reconfigure else "user", data_schema=schema, errors=errors
