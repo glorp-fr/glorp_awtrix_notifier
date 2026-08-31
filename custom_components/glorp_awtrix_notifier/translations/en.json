@@ -241,6 +241,14 @@
       "dernier_envoi": {
         "name": "Last sent"
       }
+    },
+    "button": {
+      "tester_affichage": {
+        "name": "Test show"
+      },
+      "tester_effacement": {
+        "name": "Test clear"
+      }
     }
   }
 }

@@ -51,4 +51,4 @@ REASON_CONDITION_NOT_MET = "condition_non_remplie"
 REASON_ENTITY_UNAVAILABLE = "entite_indisponible"
 REASON_TEMPLATE_ERROR_PREFIX = "erreur_template"
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["sensor", "button"]

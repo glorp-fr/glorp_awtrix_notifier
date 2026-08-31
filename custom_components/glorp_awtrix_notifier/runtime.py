@@ -51,6 +51,15 @@ class RuleRuntime:
     def _on_clear(self) -> None:
         self.hass.async_create_task(self._async_handle(TriggerSide.CLEAR))
 
+    async def async_force(self, side: TriggerSide) -> None:
+        """Run the show/clear pipeline on demand (test buttons), as if that trigger fired.
+
+        Goes through the same decide/render/publish path as a real trigger, condition
+        included — an unmet condition updates the diagnostic sensors with the real reason
+        instead of showing, same as it would for the real trigger.
+        """
+        await self._async_handle(side)
+
     async def _async_handle(self, side: TriggerSide) -> None:
         inputs = self._resolve_condition_inputs()
         action, reason = decide(self.rule, inputs, side)

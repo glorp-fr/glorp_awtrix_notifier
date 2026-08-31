@@ -241,6 +241,14 @@
       "dernier_envoi": {
         "name": "Dernier envoi"
       }
+    },
+    "button": {
+      "tester_affichage": {
+        "name": "Tester l'affichage"
+      },
+      "tester_effacement": {
+        "name": "Tester l'effacement"
+      }
     }
   }
 }
